@@ -1,6 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    process::exit,
+    collections::{HashMap, HashSet, VecDeque}, process
 };
 
 #[derive(Clone)]
@@ -56,59 +55,42 @@ fn main() {
         vec![GamerProfile {
             name: "mel".to_string(),
             fav_ctgr: "Casual".to_string(),
-            fav_game: "Standerw Valley".to_string(),
+            fav_game: "Stardew Valley".to_string(),
         }],
     );
 
-    search("you".to_string(), netword);
+    let _: Result<GamerProfile, String> = search("you".to_string(), netword).or_else(|e|  {
+        eprintln!("{}", e);
+        process::exit(1);
+    });
 }
 
-fn search(name: String, list: HashMap<String, Vec<GamerProfile>>) -> bool {
-    let mut searched_people: HashSet<String> = HashSet::new();
-    let mut queue: VecDeque<GamerProfile> = VecDeque::new();
-    let gamer: Option<&Vec<GamerProfile>> = list.get(&name);
+fn search(start: String, network: HashMap<String, Vec<GamerProfile>>) -> Result<GamerProfile, String> {
+    let mut queue = VecDeque::new();
+    let mut searched= HashSet::new();
 
-    match gamer {
-        Some(g) => {
-            for f in g {
-                queue.push_back(f.clone())
-            }
-        }
-        None => exit(1),
+    if let Some(friends) = network.get(&start) {
+        queue.extend(friends.iter().cloned());
+    } else {
+        return Err("User not found!".to_string());
     }
 
-    while !queue.is_empty() {
-        let gamer_opt: Option<GamerProfile> = queue.pop_front();
-        let gamer = match gamer_opt {
-            Some(g) => g,
-            None => return false,
-        };
-
-        if !searched_people.contains(&gamer.name) {
-            if gamer.fav_game.to_lowercase() == "Final Fantasy XIII".to_lowercase() {
-                println!("Oh, you like Final Fantasy XIII, {}!", gamer.name);
-                return true;
-            } else {
-                let friends_list: Option<&Vec<GamerProfile>> = list.get(&gamer.name);
-
-                match friends_list {
-                    Some(friend) => {
-                        for f in friend {
-                            queue.push_back(f.clone());
-                        }
-                    }
-                    None => {
-                        searched_people.insert(gamer.name);
-                        continue;
-                    }
-                }
-            }
-
-            searched_people.insert(gamer.name);
-        } else {
+    while let Some(gamer) = queue.pop_front(){
+        if searched.contains(&gamer.name) {
             continue;
         }
+
+        if gamer.fav_game.eq_ignore_ascii_case("Final Fantasy XIII") {
+            println!("Oh, you like Final Fantasy XIII, {}!", gamer.name);
+            return Ok(gamer);
+        }
+
+        if let Some(friends) = network.get(&gamer.name) {
+            queue.extend(friends.iter().cloned());
+        }
+
+        searched.insert(gamer.name);
     }
 
-    return false;
+    return Err("No one in the network corresponds to your search".to_string());
 }
