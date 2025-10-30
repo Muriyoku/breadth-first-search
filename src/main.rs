@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, HashSet, VecDeque}};
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    process::exit,
+};
 
 #[derive(Clone)]
 struct GamerProfile {
@@ -8,9 +11,9 @@ struct GamerProfile {
 }
 
 fn main() {
-    let mut friends: HashMap<String, Vec<GamerProfile>> = HashMap::new();
+    let mut netword: HashMap<String, Vec<GamerProfile>> = HashMap::new();
 
-    friends.insert(
+    netword.insert(
         "you".to_string(),
         vec![
             GamerProfile {
@@ -25,7 +28,7 @@ fn main() {
             },
         ],
     );
-    friends.insert(
+    netword.insert(
         "jhon".to_string(),
         vec![GamerProfile {
             name: "mel".to_string(),
@@ -33,7 +36,7 @@ fn main() {
             fav_game: "Standerw Valley".to_string(),
         }],
     );
-    friends.insert(
+    netword.insert(
         "jeff".to_string(),
         vec![
             GamerProfile {
@@ -48,52 +51,64 @@ fn main() {
             },
         ],
     );
-    friends.insert(
+    netword.insert(
         "cleitin".to_string(),
         vec![GamerProfile {
-            name: "Mel".to_string(),
+            name: "mel".to_string(),
             fav_ctgr: "Casual".to_string(),
             fav_game: "Standerw Valley".to_string(),
         }],
     );
 
-    search("you".to_string(), friends);
+    search("you".to_string(), netword);
 }
 
-fn search(name: String, list: HashMap<String, Vec<GamerProfile>>) {
+fn search(name: String, list: HashMap<String, Vec<GamerProfile>>) -> bool {
+    let mut searched_people: HashSet<String> = HashSet::new();
     let mut queue: VecDeque<GamerProfile> = VecDeque::new();
+    let gamer: Option<&Vec<GamerProfile>> = list.get(&name);
 
-    for f in list.get(&name).unwrap() {
-        queue.push_back(f.clone());
+    match gamer {
+        Some(g) => {
+            for f in g {
+                queue.push_back(f.clone())
+            }
+        }
+        None => exit(1),
     }
 
-    let mut searched_people: HashSet<String> = HashSet::new();
-
     while !queue.is_empty() {
-        let friend: GamerProfile = queue.pop_front().unwrap();
+        let gamer_opt: Option<GamerProfile> = queue.pop_front();
+        let gamer = match gamer_opt {
+            Some(g) => g,
+            None => return false,
+        };
 
-        if !searched_people.contains(&friend.name) {
-            if friend.fav_game.to_lowercase() == "tales of berseria" && friend.fav_ctgr == "JRPG" {
-                println!("Oh, you like Tales of Berseria, {}!", friend.name);
-
+        if !searched_people.contains(&gamer.name) {
+            if gamer.fav_game.to_lowercase() == "Final Fantasy XIII".to_lowercase() {
+                println!("Oh, you like Final Fantasy XIII, {}!", gamer.name);
+                return true;
             } else {
-                println!("current name: {}", friend.name);
-                let friend_list = list.get(&friend.name);
+                let friends_list: Option<&Vec<GamerProfile>> = list.get(&gamer.name);
 
-                match friend_list {
-                    Some(friends) => {
-                        for f in friends {
+                match friends_list {
+                    Some(friend) => {
+                        for f in friend {
                             queue.push_back(f.clone());
                         }
                     }
-                    None => continue
+                    None => {
+                        searched_people.insert(gamer.name);
+                        continue;
+                    }
                 }
-
             }
-            searched_people.insert(friend.name);
+
+            searched_people.insert(gamer.name);
         } else {
-            continue
+            continue;
         }
     }
 
+    return false;
 }
